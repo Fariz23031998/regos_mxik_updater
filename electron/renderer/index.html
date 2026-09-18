@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regos ИКПУ</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+
+    <header class="topbar">
+      <div>
+        <p class="kicker">Regos × Tasnif</p>
+        <h1>Обновление ИКПУ</h1>
+        <p>Коды ИКПУ, признак маркировки и ставка НДС</p>
+      </div>
+      <div class="topbar-status">
+        <span id="saveHint" class="badge">Автосохранение</span>
+        <span id="authBadge" class="badge">Нет токена</span>
+        <span id="runBadge" class="badge">Ожидание</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="column">
+        <article class="card">
+          <h2>Подключение</h2>
+          <p class="hint">Для локального токена интеграции OAuth не нужен.</p>
+
+          <label>
+            Токен интеграции
+            <input id="integrationToken" type="password" autocomplete="off" />
+          </label>
+
+          <fieldset class="segmented">
+            <legend>Тип интеграции</legend>
+            <label><input type="radio" name="authMode" value="local" checked /> Локальный токен</label>
+            <label><input type="radio" name="authMode" value="oauth" /> OAuth каталога</label>
+          </fieldset>
+
+          <div id="oauthFields" class="oauth-fields hidden">
+            <label>
+              Client ID
+              <input id="clientId" type="text" autocomplete="off" />
+            </label>
+            <label>
+              Секрет клиента
+              <input id="clientSecret" type="password" autocomplete="off" />
+            </label>
+          </div>
+
+          <details>
+            <summary>Дополнительные URL API</summary>
+            <label>
+              Auth URL
+              <input id="authUrl" type="text" />
+            </label>
+            <label>
+              Базовый URL API
+              <input id="apiBase" type="text" />
+            </label>
+          </details>
+
+          <button id="saveSecrets" class="primary" type="button">Сохранить ключи</button>
+        </article>
+
+        <article class="card">
+          <h2>Параметры</h2>
+          <p class="hint">Изменения сохраняются сразу. ИКПУ и НДС применяются к выбранной группе или ко всему каталогу.</p>
+
+          <div class="group-picker">
+            <label for="groupSearch">Группа товаров</label>
+            <div class="combobox" id="groupCombobox">
+              <input
+                id="groupSearch"
+                type="text"
+                placeholder="Поиск по загруженным группам: название или ID"
+                autocomplete="off"
+                spellcheck="false"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="groupList"
+              />
+              <button id="clearGroup" class="ghost-icon" type="button" title="Все группы">×</button>
+              <ul id="groupList" class="combobox-list hidden" role="listbox"></ul>
+            </div>
+            <p id="groupSelected" class="group-selected">Все группы</p>
+          </div>
+
+          <label class="switch">
+            <input id="includeChildGroups" type="checkbox" />
+            <span>Включать товары из дочерних групп</span>
+          </label>
+
+          <fieldset>
+            <legend>ИКПУ</legend>
+            <label class="choice">
+              <input type="radio" name="mxikMode" value="all" />
+              <span>
+                <strong>Обновлять все</strong>
+                <small>Записать ИКПУ для каждого найденного товара</small>
+              </span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="mxikMode" value="empty_only" />
+              <span>
+                <strong>Только пустые коды ИКПУ</strong>
+                <small>Пропустить товары, у которых уже есть ИКПУ</small>
+              </span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="mxikMode" value="none" />
+              <span>
+                <strong>Не обновлять ИКПУ</strong>
+                <small>Только признак маркировки is_labeled</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <label class="switch">
+            <input id="updateIsLabeled" type="checkbox" />
+            <span>Обновлять <code>is_labeled</code> по данным Tasnif</span>
+          </label>
+
+          <label class="switch">
+            <input id="skipDeleted" type="checkbox" />
+            <span>Пропускать удалённые товары</span>
+          </label>
+
+          <label class="switch">
+            <input id="skipServices" type="checkbox" />
+            <span>Пропускать услуги</span>
+          </label>
+
+          <p id="settingsWarning" class="warning hidden"></p>
+        </article>
+      </section>
+
+      <section class="column">
+        <article class="card">
+          <h2>База данных</h2>
+          <div id="counts" class="counts"></div>
+          <div class="button-row">
+            <button id="refresh" type="button">Обновить счётчики</button>
+            <button id="emptyDb" class="danger" type="button">Очистить базу</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Запуск</h2>
+          <p class="hint">Стоп завершает текущий пакет. «Продолжить» снова запускает ту же команду с прогресса в SQLite. Выбранная группа ограничивает загрузку, Tasnif и запись в Regos.</p>
+          <div class="run-actions">
+            <button id="startAll" class="primary" type="button">Полное обновление</button>
+            <button id="startResume" type="button" disabled title="Нет остановленного запуска">Продолжить</button>
+            <button id="stop" type="button" disabled>Стоп</button>
+          </div>
+          <div class="run-actions">
+            <button id="startFetch" type="button">Загрузить из Regos</button>
+            <button id="startTasnif" type="button">Поиск в Tasnif</button>
+            <button id="startUpdate" type="button">Обновить Regos</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>НДС</h2>
+          <p class="hint">Назначить одну ставку НДС товарам выбранной группы или всему каталогу. Уже совпадающие ставки пропускаются. Стоп завершает текущий пакет. Прогресс ИКПУ не меняется.</p>
+          <label>
+            Ставка НДС
+            <select id="vatSelect">
+              <option value="">Загрузка ставок…</option>
+            </select>
+          </label>
+          <div class="button-row compact">
+            <button id="startVat" class="primary" type="button">Обновить НДС</button>
+            <button id="stopVat" type="button" disabled>Стоп</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Ручное обновление</h2>
+          <p class="hint">Назначить ИКПУ или is_labeled товарам выбранной группы или всему каталогу. Уже совпадающие значения пропускаются. Стоп завершает текущий пакет. Прогресс поиска Tasnif в SQLite не меняется.</p>
+          <label>
+            Код ИКПУ
+            <input id="manualIcps" type="text" autocomplete="off" spellcheck="false" />
+          </label>
+          <div class="button-row compact">
+            <button id="startIcps" class="primary" type="button">Записать ИКПУ</button>
+          </div>
+          <fieldset class="segmented">
+            <legend>is_labeled</legend>
+            <label><input type="radio" name="manualLabeled" value="true" /> Да</label>
+            <label><input type="radio" name="manualLabeled" value="false" checked /> Нет</label>
+          </fieldset>
+          <div class="button-row compact">
+            <button id="startLabeled" class="primary" type="button">Записать is_labeled</button>
+            <button id="stopManual" type="button" disabled>Стоп</button>
+          </div>
+        </article>
+
+        <article class="card log-card">
+          <h2>Журнал</h2>
+          <pre id="log" class="log"></pre>
+        </article>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

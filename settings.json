@@ -1,0 +1,15 @@
+{
+  "mxikUpdateMode": "all",
+  "updateIsLabeled": true,
+  "skipDeleted": true,
+  "skipServices": false,
+  "groupId": null,
+  "includeChildGroups": false,
+  "pageSize": 1000,
+  "tasnifDelayMs": 250,
+  "tasnifConcurrency": 2,
+  "regosDelayMs": 200,
+  "regosBatchSize": 20,
+  "requestTimeoutMs": 30000,
+  "maxRetries": 3
+}

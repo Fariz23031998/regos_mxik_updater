@@ -1,0 +1,61 @@
+{
+  "name": "regos-mxik-updater",
+  "version": "1.0.0",
+  "description": "Update Regos product icps and is_labeled fields from Tasnif MXIK data",
+  "author": "Regos",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "main": "dist/electron/boot.js",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "status": "tsx src/index.ts status",
+    "ui": "tsc && electron .",
+    "dist:win": "tsc && electron-builder --win portable"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "electron": "^38.1.0",
+    "electron-builder": "^26.15.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "build": {
+    "appId": "uz.regos.ikpu-updater",
+    "productName": "Regos IKPU",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/renderer/**/*",
+      "electron/preload.cjs",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "dist/src/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "Regos-IKPU-${version}.exe"
+    }
+  },
+  "allowScripts": {
+    "electron@38.8.6": true,
+    "esbuild@0.28.2": true
+  }
+}
